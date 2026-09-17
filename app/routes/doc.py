@@ -4,7 +4,9 @@ from pathlib import Path
 from app.services.doc import extract_text
 from app.services.chunker import chunk_text
 from app.services.emb import create_embeddings, create_embedding
-from app.services.vector_store import add_documents, search
+from app.services.llm import generate_answer
+from app.services.vector_store import add_documents, search, documents
+from app.schemas.doc import doc
 
 router = APIRouter(prefix="/doc")
 
@@ -20,8 +22,8 @@ async def upload_file(file: UploadFile = File(...)):
         buffer.write(await file.read())
 
     text = extract_text(file_path)
-
     chunks = chunk_text(text)
+    print("Total chunks:", len(chunks))
 
     embeddings = await create_embeddings(chunks)
     add_documents(chunks, embeddings)
@@ -35,13 +37,26 @@ async def upload_file(file: UploadFile = File(...)):
     }
 
 
-@router.get("/search")
-async def search_documents(query: str):
+@router.get("/ask")
+async def ask_question(query: str):
     query_embedding = await create_embedding(query)
 
     results = search(query_embedding)
 
+    context = "\n\n".join(result["text"] for result in results)
+
+    answer = await generate_answer(
+        question=query,
+        context=context,
+    )
+
     return {
         "query": query,
-        "results": results,
+        "answer": answer,
+        "sources": results,
     }
+
+
+@router.get("/debug")
+async def debug_vector_store():
+    return {"documents_in_memory": len(documents)}

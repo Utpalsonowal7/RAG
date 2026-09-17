@@ -1,7 +1,4 @@
-from google import genai
-from app.config import GEMI
-
-client = genai.Client(api_key=GEMI)
+from app.core.gemini import client
 
 
 async def create_embedding(text: str):
