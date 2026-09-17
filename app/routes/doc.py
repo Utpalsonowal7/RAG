@@ -4,9 +4,13 @@ from pathlib import Path
 from app.services.doc import extract_text
 from app.services.chunker import chunk_text
 from app.services.emb import create_embeddings, create_embedding
-from app.services.llm import generate_answer
+from app.services.llm import generate_answer_stream
 from app.services.vector_store import add_documents, search, documents
 from app.schemas.doc import doc
+
+import json
+
+from fastapi.responses import StreamingResponse
 
 router = APIRouter(prefix="/doc")
 
@@ -43,18 +47,47 @@ async def ask_question(query: str):
 
     results = search(query_embedding)
 
+    if not results:
+
+        async def no_results():
+            yield "event: answer\n"
+            yield 'data: {"text":"I couldn\'t find the answer in the provided document."}\n\n'
+
+            yield "event: done\n"
+            yield "data: {}\n\n"
+
+        return StreamingResponse(
+            no_results(),
+            media_type="text/event-stream",
+        )
+
     context = "\n\n".join(result["text"] for result in results)
 
-    answer = await generate_answer(
-        question=query,
-        context=context,
-    )
+    async def event_stream():
+       
+        yield "event: sources\n"
+        yield f"data: {json.dumps(results)}\n\n"
 
-    return {
-        "query": query,
-        "answer": answer,
-        "sources": results,
-    }
+       
+        async for text in generate_answer_stream(
+            question=query,
+            context=context,
+        ):
+            yield "event: token\n"
+            yield f"data: {json.dumps({'text': text})}\n\n"
+
+        
+        yield "event: done\n"
+        yield "data: {}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    )
 
 
 @router.get("/debug")

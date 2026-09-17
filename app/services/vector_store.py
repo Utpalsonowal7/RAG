@@ -19,9 +19,8 @@ def cosine_similarity(vector_a, vector_b):
     )
 
 
-def search(query_embedding, top_k=3):
+def search(query_embedding, top_k=3, threshold=0.6):
     query_embedding = np.array(query_embedding)
-
     results = []
 
     for document in documents:
@@ -30,12 +29,13 @@ def search(query_embedding, top_k=3):
             document["embedding"],
         )
 
-        results.append(
-            {
-                "text": document["text"],
-                "similarity": float(similarity),
-            }
-        )
+        if similarity >= threshold:
+            results.append(
+                {
+                    "text": document["text"],
+                    "similarity": float(similarity),
+                }
+            )
 
     results.sort(
         key=lambda result: result["similarity"],

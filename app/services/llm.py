@@ -1,6 +1,7 @@
 from app.core.gemini import client
 
-async def generate_answer(question: str, context: str):
+
+async def generate_answer_stream(question: str, context: str):
     prompt = f"""
 You are a helpful assistant answering questions based on the provided context.
 
@@ -17,7 +18,7 @@ Question:
 Answer:
 """
 
-    response = client.models.generate_content(
+    response = await client.aio.models.generate_content_stream(
         model="gemini-3.6-flash",
         contents=prompt,
         config={
@@ -25,4 +26,6 @@ Answer:
         },
     )
 
-    return response.text
+    async for chunk in response:
+        if chunk.text:
+            yield chunk.text
