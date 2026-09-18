@@ -4,3 +4,4 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GEMI = os.getenv("GEMINI_API_KEY")
+DB = os.getenv("DATABASE_URL")

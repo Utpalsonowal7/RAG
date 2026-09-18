@@ -3,8 +3,18 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes.doc import router as upload_docs
 from app.routes.exam import router as exam_router
+from contextlib import asynccontextmanager
+from app.db.db import engine,Base
+from app.db.models import Document,DocumentChunk
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app:FastAPI):
+     async with engine.begin() as conn:
+          await conn.run_sync(Base.metadata.create_all)
+
+     yield
+     
+app = FastAPI(lifespan=lifespan)
 
 origins = [
     "http://localhost:5173",
