@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes.doc import router as upload_docs
 from app.routes.exam import router as exam_router
+from app.routes.doc_db import router as db_docs
 from contextlib import asynccontextmanager
 from app.db.db import engine,Base
 from app.db.models import Document,DocumentChunk
@@ -13,7 +14,7 @@ async def lifespan(app:FastAPI):
           await conn.run_sync(Base.metadata.create_all)
 
      yield
-     
+
 app = FastAPI(lifespan=lifespan)
 
 origins = [
@@ -33,6 +34,7 @@ api_router = APIRouter(prefix="/api")
 
 api_router.include_router(upload_docs)
 api_router.include_router(exam_router)
+api_router.include_router(db_docs)
 
 app.include_router(api_router)
 
