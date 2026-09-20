@@ -50,14 +50,18 @@ async def upload_file(file: UploadFile = File(...)):
 
 
 @router.get("/ask")
-async def ask_question(query: str):
+async def ask_question(
+    query: str,
+    document_id: int,
+):
     query_embedding = await create_embedding(query)
 
     results = await search_documents(
-        query_embedding=query_embedding,
-        top_k=3,
-        threshold=0.6,
-    )
+    document_id=document_id,
+    query_embedding=query_embedding,
+    top_k=3,
+    threshold=0.6,
+)
 
     if not results:
 

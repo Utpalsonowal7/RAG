@@ -36,6 +36,7 @@ async def save_document(
 
 
 async def search_documents(
+    document_id: int,
     query_embedding: list[float],
     top_k: int = 3,
     threshold: float = 0.6,
@@ -49,6 +50,7 @@ async def search_documents(
                 DocumentChunk.content,
                 distance.label("distance"),
             )
+            .where(DocumentChunk.document_id == document_id)
             .order_by(distance)
             .limit(top_k)
         )
